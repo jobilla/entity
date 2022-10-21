@@ -5,16 +5,16 @@ This package provides a convenient way to decode JSON retrieved from your API or
 Each class is self-encoding, which means that it knows how to encode itself. As such, each class should extend the `Entity` class in order to work, as it deals with the heavy lifting. Alternatively, your class may implement its own `fromJson` method.
 
 ## Installation
-Install the package from NPM under the name `@decahedron/entity`:
+
 ```
-yarn add @decahedron/entity
+yarn add @jobilla/entity
 ```
 
 ## Usage
 The basic usage is very straightforward: make your class extend `Entity`, and use the `EntityBuilder` to hydrate instances of it:
 
 ```typescript
-import { Entity, EntityBuilder } from '@decahedron/entity';
+import { Entity, EntityBuilder } from '@jobilla/entity';
 
 class User extends Entity {
     // We instantiate with null to ensure the property exists
@@ -39,6 +39,7 @@ fetch('https://api.service.com/v1/users')
 ### Annotating nested entities
 
 If your endpoint returns a nested object, such as:
+
 ```json
 {
     "name": "Decahedron Technologies Ltd.",
@@ -55,7 +56,7 @@ The JSON decoding process will _ignore_ the nested object (`address`). This also
 
 There are two ways to solve this. The first one is to simply override the `fromJson` method (in fact, this is why we expose the method on the `Entity`, to make it easy to override decoding functionality):
 ```typescript
-import { Entity, EntityBuilder } from '@decahedron/entity';
+import { Entity, EntityBuilder } from '@jobilla/entity';
 
 class User extends Entity {
     public name: string = null;
@@ -106,14 +107,10 @@ Entity objects can also be encoded back to a plain JavaScript Object, or as a JS
 
 The method defaults to converting your properties to snake case. To prevent this, you can pass `false` as the first argument to `toJson()`. The method also accepts a second boolean argument that lets you specify if the output should instead be as a JSON string. `toJson(true, true)` is identical to `JSON.stringify(toJson(true))`.
 
-## To-do
-- [ ] Create an `IEntity` interface that can be implemented
-
 ## Contributing
 
-Run the build and the tests using the following commands:
+Run the tests using the following commands:
 
 ```
-$ npm run build
-$ npm test
+$ make test
 ```
