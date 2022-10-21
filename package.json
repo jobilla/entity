@@ -8,6 +8,9 @@
     "build": "make build",
     "test": "jest"
   },
+  "publishConfig": {
+    "access": "public"
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/jobilla/entity"
