@@ -1,6 +1,6 @@
 {
-  "name": "@decahedron/entity",
-  "version": "4.0.0",
+  "name": "@jobilla/entity",
+  "version": "1.0.0",
   "description": "A library to encode and decode JSON into entity classes",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -10,7 +10,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/decahedronio/entity"
+    "url": "https://github.com/jobilla/entity"
   },
   "keywords": [
     "entity",
@@ -19,11 +19,19 @@
     "encode",
     "typescript"
   ],
-  "author": "Decahedron Technologies Ltd. <hello@decahedron.io>",
+  "author": {
+    "name": "Leo Sjöberg",
+    "email": "leo.sjoberg@jobilla.com"
+  },
+  "contributors": [
+    {
+      "name": "Hakan Aktaş",
+      "email": "hakan.aktas@jobilla.com"
+    }
+  ],
   "license": "MIT",
   "devDependencies": {
     "@types/jest": "^28.1.4",
-    "@types/node": "^11.11.4",
     "jest": "^28.1.2",
     "reflect-metadata": "^0.1.13",
     "ts-jest": "^28.0.5",
