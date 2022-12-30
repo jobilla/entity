@@ -1,4 +1,4 @@
-# Decahedron Entity
+# Jobilla Entity
 
 This package provides a convenient way to decode JSON retrieved from your API or similar, and turning it into a TypeScript class instance.
 
@@ -24,16 +24,16 @@ class User extends Entity {
 }
 
 fetch('https://api.service.com/v1/users/1')
-    .then(response => response.Body.json())
-    .then(jsonData => EntityBuilder.buildOne<User>(User, jsonData));
+    .then(response => response.json())
+    .then(jsonData => EntityBuilder.buildOne(User, jsonData));
 ```
 
 You can also build an array of entities:
 
 ```typescript
 fetch('https://api.service.com/v1/users')
-    .then(response => response.Body.json())
-    .then(jsonData => EntityBuilder.buildMany<User>(User, jsonData));
+    .then(response => response.json())
+    .then(jsonData => EntityBuilder.buildMany(User, jsonData));
 ```
 
 ### Annotating nested entities
@@ -75,7 +75,7 @@ class User extends Entity {
 }
 ```
 
-However, this is quite verbose. Instead, an `@Type` decorator is provided for nested decoding:
+However, this is quite verbose. To simplify your codebase, `@Type` decorator is provided for nested decoding:
 
 ```typescript
 class User extends Entity {
@@ -106,6 +106,100 @@ If your entity has a nested object that is **not** represented by another entity
 Entity objects can also be encoded back to a plain JavaScript Object, or as a JSON string. You can call `toJson()` on any entity to convert it to a plain JS object.
 
 The method defaults to converting your properties to snake case. To prevent this, you can pass `false` as the first argument to `toJson()`. The method also accepts a second boolean argument that lets you specify if the output should instead be as a JSON string. `toJson(true, true)` is identical to `JSON.stringify(toJson(true))`.
+
+### Getting rid of initializer values
+
+You might have noticed that all entity properties in this document's examples have initializer values, the ` = null` part. `EntityBuilder` needs properties to exist _before_ building entity instances from raw data.
+
+Let's explain with code. Here is the usual way entities work.
+
+```typescript
+// This is your Typescript class.
+class User extends Entity {
+    public name: string = null;
+}
+
+// This is the emitted Javascript class. The exact syntax might be different depending on your `target` setting in your TS config.
+// The code is reduced to the relevant parts.
+class User extends Entity {
+    constructor() {
+        this.name = null;
+    }
+}
+
+// So this will work as expected.
+const user = EntityBuilder.buildOne(User, {
+    name: 'John',
+});
+
+console.log(user.name); // Output: 'John'
+```
+
+Let's see what happens without the initializer values.
+
+```typescript
+class User extends Entity {
+    // Notice that we don't have `= null` here.
+    public name!: string;
+}
+
+// This is the emitted Javascript class. The exact syntax might be different depending on your `target` setting in your TS config.
+// The code is reduced to the relevant parts.
+class User extends Entity {
+    constructor() {
+        // Notice there is no property declaration here.
+    }
+}
+
+// This will *not* work as expected.
+const user = EntityBuilder.buildOne(User, {
+    name: 'John',
+});
+
+console.log(user.name); // Output: undefined
+```
+
+`EntityBuilder` is selective about which parts of the raw data it assigns to the entity instance. And it does that by checking the existence of a property, before trying to write a value to it. So if there is no `name` property in the entity definition, that `'John'` string will not get assigned to it.
+
+Now, there is a *magical* way we can omit initializer values, but still have it working as expected. That magic is called `useDefineForClassFields`, and it's a configuration option for TS. Let's see how it works.
+
+```json5
+// tsconfig.json
+{
+  "useDefineForClassFields": true
+}
+```
+
+```typescript
+class User extends Entity {
+    // Notice that we don't have `= null` here.
+    public name!: string;
+}
+
+// This is the emitted Javascript class. The exact syntax might be different depending on your `target` setting in your TS config.
+// The code is reduced to the relevant parts.
+class User extends Entity {
+    constructor() {
+        Object.defineProperty(this, 'name', {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0,
+        });
+    }
+}
+
+// This will work as expected.
+const user = EntityBuilder.buildOne(User, {
+    name: 'Jenny',
+});
+
+console.log(user.name); // Output: 'Jenny'
+```
+
+That `Object.defineProperty` in the Javascript output part is a neat little way of Typescript to tell that there is indeed a property called `name` but it's not initialized (notice the value is `void 0` which is `undefined`). This way, `EntityBuilder` knows the existence of the property, and it can fill it with raw data.
+
+There is an exception to this. Noted in [the related TSConfig reference](https://www.typescriptlang.org/tsconfig#useDefineForClassFields), this `useDefineForClassFields` setting is enabled by default if your target is ES2022 or higher. So you might not even need to explicitly enable this configuration.
 
 ## Contributing
 
