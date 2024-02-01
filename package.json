@@ -1,6 +1,6 @@
 {
   "name": "@jobilla/entity",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "A library to encode and decode JSON into entity classes",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
