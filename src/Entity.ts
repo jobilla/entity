@@ -1,15 +1,15 @@
-import { defaultMetadataStorage } from './support/storage';
-import { EntityBuilder } from './EntityBuilder';
-import { toJson } from './support/toJson';
+import { defaultMetadataStorage } from "./support/storage";
+import { EntityBuilder } from "./EntityBuilder";
+import { toJson } from "./support/toJson";
 
 /**
  * This type converts given string's camelCase parts to snake_case.
  */
-type Snake<T extends string> =
-    string extends T ? string :
-        T extends `${infer C0}${infer R}`
-            ? `${C0 extends "_" ? "" : C0 extends Uppercase<C0> ? "_" : ""}${Lowercase<C0>}${Snake<R>}`
-            : "";
+type Snake<T extends string> = string extends T
+  ? string
+  : T extends `${infer C0}${infer R}`
+    ? `${C0 extends "_" ? "" : C0 extends Uppercase<C0> ? "_" : ""}${Lowercase<C0>}${Snake<R>}`
+    : "";
 
 /**
  * This generic type returns a new type from the given entity class that only
@@ -17,11 +17,20 @@ type Snake<T extends string> =
  * include any methods of the entity.
  */
 export type Props<T extends Entity> = {
-    [K in keyof T as T[K] extends Function ? never : Extract<K, string>]:
-        T[K] extends Entity[] ? Props<T[K][number]>[] :
-            T[K] extends Entity ? Props<T[K]> :
-                T[K]
-}
+  [K in keyof T as T[K] extends Function
+    ? never
+    : Extract<K, string>]: T[K] extends Entity[]
+    ? Props<T[K][number]>[]
+    : T[K] extends Entity
+      ? Props<T[K]>
+      : T[K] extends Entity | undefined
+        ? Props<Required<T[K]>> | undefined
+        : T[K] extends Entity | null
+          ? Props<Required<T[K]>> | undefined
+          : T[K] extends Entity | null | undefined
+            ? Props<Required<T[K]>> | null | undefined
+            : T[K];
+};
 
 /**
  * The only difference this type has from `Props<T>` is that the property keys
@@ -30,11 +39,20 @@ export type Props<T extends Entity> = {
  * entities to plain objects.
  */
 export type PropsJson<T extends Entity> = {
-    [K in keyof T as T[K] extends Function ? never : Snake<Extract<K, string>>]:
-        T[K] extends Entity[] ? PropsJson<T[K][number]>[] :
-            T[K] extends Entity ? PropsJson<T[K]> :
-                T[K]
-}
+  [K in keyof T as T[K] extends Function
+    ? never
+    : Snake<Extract<K, string>>]: T[K] extends Entity[]
+    ? PropsJson<T[K][number]>[]
+    : T[K] extends Entity
+      ? PropsJson<T[K]>
+      : T[K] extends Entity | undefined
+        ? PropsJson<Required<T[K]>> | undefined
+        : T[K] extends Entity | null
+          ? PropsJson<Required<T[K]>> | undefined
+          : T[K] extends Entity | null | undefined
+            ? PropsJson<Required<T[K]>> | null | undefined
+            : T[K];
+};
 
 /**
  * The reason this type exists instead of just doing `Partial<Props<T>>` is
@@ -43,11 +61,20 @@ export type PropsJson<T extends Entity> = {
  * for entities that have Entity props.
  */
 export type PartialProps<T extends Entity> = Partial<{
-    [K in keyof T as T[K] extends Function ? never : Extract<K, string>]:
-        T[K] extends Entity[] ? PartialProps<T[K][number]>[] :
-            T[K] extends Entity ? PartialProps<T[K]> :
-                T[K]
-}>
+  [K in keyof T as T[K] extends Function
+    ? never
+    : Extract<K, string>]: T[K] extends Entity[]
+    ? PartialProps<T[K][number]>[]
+    : T[K] extends Entity
+      ? PartialProps<T[K]>
+      : T[K] extends Entity | undefined
+        ? PartialProps<Required<T[K]>> | undefined
+        : T[K] extends Entity | null
+          ? PartialProps<Required<T[K]>> | undefined
+          : T[K] extends Entity | null | undefined
+            ? PartialProps<Required<T[K]>> | null | undefined
+            : T[K];
+}>;
 
 /**
  * Similar to differences between `Props<T>` and `PropsJson<T>`, the only
@@ -55,52 +82,67 @@ export type PartialProps<T extends Entity> = Partial<{
  * type will convert property keys to snake case.
  */
 export type PartialPropsJson<T extends Entity> = Partial<{
-    [K in keyof T as T[K] extends Function ? never : Snake<Extract<K, string>>]:
-        T[K] extends Entity[] ? PartialPropsJson<T[K][number]>[] :
-            T[K] extends Entity ? PartialPropsJson<T[K]> :
-                T[K]
-}>
+  [K in keyof T as T[K] extends Function
+    ? never
+    : Snake<Extract<K, string>>]: T[K] extends Entity[]
+    ? PartialPropsJson<T[K][number]>[]
+    : T[K] extends Entity
+      ? PartialPropsJson<T[K]>
+      : T[K] extends Entity | undefined
+        ? PartialPropsJson<Required<T[K]>> | undefined
+        : T[K] extends Entity | null
+          ? PartialPropsJson<Required<T[K]>> | undefined
+          : T[K] extends Entity | null | undefined
+            ? PartialPropsJson<Required<T[K]>> | null | undefined
+            : T[K];
+}>;
 
 export class Entity {
-    hasProp(key: string): boolean {
-        if (Object.prototype.hasOwnProperty.call(this, key)) {
-            return true;
-        }
-
-        return !!defaultMetadataStorage.findTypeMetadata(this.constructor, key);
+  hasProp(key: string): boolean {
+    if (Object.prototype.hasOwnProperty.call(this, key)) {
+      return true;
     }
 
-    getProp(key: string) {
-        if (!this.hasProp(key)) {
-            return;
-        }
+    return !!defaultMetadataStorage.findTypeMetadata(this.constructor, key);
+  }
 
-        return (this as any)[key];
+  getProp(key: string) {
+    if (!this.hasProp(key)) {
+      return;
     }
 
-    setProp(key: string, value: any) {
-        if (!this.hasProp(key)) {
-            return;
-        }
+    return (this as any)[key];
+  }
 
-        (this as any)[key] = value;
+  setProp(key: string, value: any) {
+    if (!this.hasProp(key)) {
+      return;
     }
 
-    toJson(toSnake?: true, asString?: false): PropsJson<this>;
-    toJson(toSnake?: false, asString?: false): Props<this>;
-    toJson(toSnake?: boolean, asString?: false): Props<this> | PropsJson<this>;
-    toJson(toSnake?: boolean, asString?: true): string;
-    toJson(toSnake?: boolean, asString?: boolean): Props<this> | PropsJson<this> | string;
+    (this as any)[key] = value;
+  }
 
-    /*
-     * Convert an Entity to JSON, either in object or string format.
-     */
-    toJson(toSnake: boolean = true, asString: boolean = false): Props<this> | PropsJson<this> | string {
-        return toJson.call(this, toSnake, asString);
-    }
+  toJson(toSnake?: true, asString?: false): PropsJson<this>;
+  toJson(toSnake?: false, asString?: false): Props<this>;
+  toJson(toSnake?: boolean, asString?: false): Props<this> | PropsJson<this>;
+  toJson(toSnake?: boolean, asString?: true): string;
+  toJson(
+    toSnake?: boolean,
+    asString?: boolean,
+  ): Props<this> | PropsJson<this> | string;
 
-    fromJson(data: PartialPropsJson<this>): this {
-        EntityBuilder.fill(this, data);
-        return this;
-    }
+  /*
+   * Convert an Entity to JSON, either in object or string format.
+   */
+  toJson(
+    toSnake: boolean = true,
+    asString: boolean = false,
+  ): Props<this> | PropsJson<this> | string {
+    return toJson.call(this, toSnake, asString);
+  }
+
+  fromJson(data: PartialPropsJson<this>): this {
+    EntityBuilder.fill(this, data);
+    return this;
+  }
 }
