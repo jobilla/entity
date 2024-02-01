@@ -1,3 +1,6 @@
 export class JsonExcludeMetadata {
-    constructor(public target: Function, public propertyName: string) {}
+  constructor(
+    public target: Function,
+    public propertyName: string,
+  ) {}
 }
