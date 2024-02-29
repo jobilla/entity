@@ -1,4 +1,4 @@
-# Decahedron Entity
+# Jobilla Entity
 
 This package provides a convenient way to decode JSON retrieved from your API or similar, and turning it into a TypeScript class instance.
 
