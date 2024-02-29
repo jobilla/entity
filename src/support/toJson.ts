@@ -1,13 +1,9 @@
 import { defaultMetadataStorage } from "./storage";
 import { StringHelper } from "./StringHelper";
 import { TypeMetadata } from "./metadata/TypeMetadata";
-import { Entity, Props, PropsJson } from "../Entity";
+import { Entity, Props } from "../Entity";
 
-export function toJson<T extends Entity>(
-  this: T,
-  toSnake: boolean = true,
-  asString: boolean = false,
-): Props<T> | PropsJson<T> | string {
+export function toJson<T extends Entity>(this: T): Props<T> {
   const data: any = {};
 
   for (let key in this) {
@@ -20,12 +16,12 @@ export function toJson<T extends Entity>(
       continue;
     }
 
-    let outputKey = toSnake ? StringHelper.toSnake(key) : key;
+    let outputKey = StringHelper.toSnake(key);
 
     const value: any = this[key];
 
     if (value instanceof Entity) {
-      data[outputKey] = value.toJson(toSnake, asString) as Props<typeof value>;
+      data[outputKey] = value.toJson() as Props<typeof value>;
 
       continue;
     }
@@ -41,9 +37,7 @@ export function toJson<T extends Entity>(
       value[0] instanceof Object
     ) {
       if (value[0] instanceof Entity) {
-        data[outputKey] = value.map((entity: Entity) =>
-          entity.toJson(toSnake, asString),
-        );
+        data[outputKey] = value.map((entity: Entity) => entity.toJson());
       }
 
       if (metadata && metadata.type === Object) {
@@ -66,5 +60,5 @@ export function toJson<T extends Entity>(
     data[outputKey] = value;
   }
 
-  return asString ? JSON.stringify(data) : data;
+  return data;
 }

@@ -1,4 +1,4 @@
-import { Entity, PartialPropsJson } from "./Entity";
+import { Entity, PartialProps } from "./Entity";
 import { Buildable, Constructor } from "./support/Type";
 import { TypeMetadata } from "./support/metadata/TypeMetadata";
 import { defaultMetadataStorage } from "./support/storage";
@@ -8,7 +8,7 @@ import { StringHelper } from "./support/StringHelper";
 export class EntityBuilder {
   public static buildOne<T extends Entity>(
     buildClass: Constructor<T>,
-    sourceData: PartialPropsJson<T>,
+    sourceData: PartialProps<T>,
   ): T {
     const entity = new buildClass();
     return entity.fromJson(sourceData);
@@ -16,17 +16,14 @@ export class EntityBuilder {
 
   public static buildMany<T extends Entity>(
     buildClass: Constructor<T>,
-    sourceData: Array<PartialPropsJson<T>>,
+    sourceData: Array<PartialProps<T>>,
   ): Array<T> {
     return sourceData.map((entityData) =>
       this.buildOne(buildClass, entityData),
     );
   }
 
-  public static fill<T extends Entity>(
-    entity: T,
-    data: PartialPropsJson<T>,
-  ): T {
+  public static fill<T extends Entity>(entity: T, data: PartialProps<T>): T {
     for (let key in data) {
       EntityBuilder.fillProperty<T>(entity, key, data[key]);
     }

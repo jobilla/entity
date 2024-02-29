@@ -1,9 +1,4 @@
 export class StringHelper {
-  /**
-   * Convert a string to camelCase.
-   * @param source
-   * @returns {string}
-   */
   public static toCamel(source: string): string {
     // Inspired by http://www.devcurry.com/2011/07/javascript-convert-camelcase-to-dashes.html
     // Remove underscores and turn the next character into uppercase

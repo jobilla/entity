@@ -19,7 +19,7 @@ type Snake<T extends string> = string extends T
 export type Props<T extends Entity> = {
   [K in keyof T as T[K] extends Function
     ? never
-    : Extract<K, string>]: T[K] extends Entity[]
+    : Snake<Extract<K, string>>]: T[K] extends Entity[]
     ? Props<T[K][number]>[]
     : T[K] extends Entity
       ? Props<T[K]>
@@ -33,28 +33,6 @@ export type Props<T extends Entity> = {
 };
 
 /**
- * The only difference this type has from `Props<T>` is that the property keys
- * will be snake_cased to be inline with how this library converts property
- * keys while building entities from plain objects, and while converting
- * entities to plain objects.
- */
-export type PropsJson<T extends Entity> = {
-  [K in keyof T as T[K] extends Function
-    ? never
-    : Snake<Extract<K, string>>]: T[K] extends Entity[]
-    ? PropsJson<T[K][number]>[]
-    : T[K] extends Entity
-      ? PropsJson<T[K]>
-      : T[K] extends Entity | undefined
-        ? PropsJson<Required<T[K]>> | undefined
-        : T[K] extends Entity | null
-          ? PropsJson<Required<T[K]>> | undefined
-          : T[K] extends Entity | null | undefined
-            ? PropsJson<Required<T[K]>> | null | undefined
-            : T[K];
-};
-
-/**
  * The reason this type exists instead of just doing `Partial<Props<T>>` is
  * because the partiality is recursive. `Partial<Props<T>>` and
  * `PartialProps<T>` will generate different result
@@ -63,7 +41,7 @@ export type PropsJson<T extends Entity> = {
 export type PartialProps<T extends Entity> = Partial<{
   [K in keyof T as T[K] extends Function
     ? never
-    : Extract<K, string>]: T[K] extends Entity[]
+    : Snake<Extract<K, string>>]: T[K] extends Entity[]
     ? PartialProps<T[K][number]>[]
     : T[K] extends Entity
       ? PartialProps<T[K]>
@@ -73,27 +51,6 @@ export type PartialProps<T extends Entity> = Partial<{
           ? PartialProps<Required<T[K]>> | undefined
           : T[K] extends Entity | null | undefined
             ? PartialProps<Required<T[K]>> | null | undefined
-            : T[K];
-}>;
-
-/**
- * Similar to differences between `Props<T>` and `PropsJson<T>`, the only
- * difference between this type and `PartialProps<T>` is that this
- * type will convert property keys to snake case.
- */
-export type PartialPropsJson<T extends Entity> = Partial<{
-  [K in keyof T as T[K] extends Function
-    ? never
-    : Snake<Extract<K, string>>]: T[K] extends Entity[]
-    ? PartialPropsJson<T[K][number]>[]
-    : T[K] extends Entity
-      ? PartialPropsJson<T[K]>
-      : T[K] extends Entity | undefined
-        ? PartialPropsJson<Required<T[K]>> | undefined
-        : T[K] extends Entity | null
-          ? PartialPropsJson<Required<T[K]>> | undefined
-          : T[K] extends Entity | null | undefined
-            ? PartialPropsJson<Required<T[K]>> | null | undefined
             : T[K];
 }>;
 
@@ -122,26 +79,11 @@ export class Entity {
     (this as any)[key] = value;
   }
 
-  toJson(toSnake?: true, asString?: false): PropsJson<this>;
-  toJson(toSnake?: false, asString?: false): Props<this>;
-  toJson(toSnake?: boolean, asString?: false): Props<this> | PropsJson<this>;
-  toJson(toSnake?: boolean, asString?: true): string;
-  toJson(
-    toSnake?: boolean,
-    asString?: boolean,
-  ): Props<this> | PropsJson<this> | string;
-
-  /*
-   * Convert an Entity to JSON, either in object or string format.
-   */
-  toJson(
-    toSnake: boolean = true,
-    asString: boolean = false,
-  ): Props<this> | PropsJson<this> | string {
-    return toJson.call(this, toSnake, asString);
+  toJson(): Props<this> {
+    return toJson.call(this);
   }
 
-  fromJson(data: PartialPropsJson<this>): this {
+  fromJson(data: PartialProps<this>): this {
     EntityBuilder.fill(this, data);
     return this;
   }
