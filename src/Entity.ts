@@ -54,6 +54,11 @@ export type PartialProps<T extends Entity> = Partial<{
             : T[K];
 }>;
 
+function fromJson<T extends Entity>(data: PartialProps<T>): T {
+  EntityBuilder.fill(this, data);
+  return this;
+}
+
 export class Entity {
   hasProp(key: string): boolean {
     if (Object.prototype.hasOwnProperty.call(this, key)) {
@@ -79,12 +84,6 @@ export class Entity {
     (this as any)[key] = value;
   }
 
-  toJson(): Props<this> {
-    return toJson.call(this);
-  }
-
-  fromJson(data: PartialProps<this>): this {
-    EntityBuilder.fill(this, data);
-    return this;
-  }
+  toJson = toJson.bind(this);
+  fromJson = fromJson.bind(this);
 }
