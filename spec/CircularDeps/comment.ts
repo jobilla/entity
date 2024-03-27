@@ -1,10 +1,10 @@
-import { Entity } from '../../src/Entity';
-import { Type } from '../../src/support/Type';
-import { BlogPost } from './blog';
+import { Entity } from "../../src";
+import { Type } from "../../src";
+import { BlogPost } from "./blog";
 
 export default class Comment extends Entity {
-    public body: string = null;
+  public body!: string;
 
-    @Type(() => require('./blog').BlogPost)
-    public blog: BlogPost = null;
+  @Type(() => BlogPost)
+  public blog!: BlogPost;
 }

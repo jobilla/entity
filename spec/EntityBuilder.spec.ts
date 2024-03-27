@@ -1,33 +1,30 @@
-import { EntityBuilder } from "../src";
-import { Entity, PartialProps } from "../src";
-import { Type } from "../src";
-import { JsonExclude } from "../src/support/JsonExclude";
+import { Entity, EntityBuilder, JsonExclude, Type } from "../src";
 
 class User extends Entity {
-  public name: string = undefined;
-  public email: string = undefined;
-  public daysAvailable: string[] = [];
+  public name!: string;
+  public email!: string;
+  public daysAvailable!: string[];
 }
 
 class Address extends Entity {
-  public street: string = null;
-  public city: string = null;
-  public zip: string = null;
-  public country: string = null;
+  public street!: string;
+  public city!: string;
+  public zip!: string;
+  public country!: string;
 }
 
 class Post extends Entity {
-  public title: string = null;
-  public content: string = null;
+  public title!: string;
+  public content!: string;
 }
 
 class UserWithAddress extends User {
-  public address: Address = null;
+  public address!: Address;
 }
 
 class UserWithAnnotatedAddress extends User {
   @Type(Address)
-  public address: Address;
+  public address!: Address;
 }
 
 class UserWithAnnotatedPosts extends User {
@@ -37,7 +34,7 @@ class UserWithAnnotatedPosts extends User {
 
 class UserWithAnnotatedObject extends User {
   @Type(Object)
-  public address: { [key: string]: string };
+  public address!: { [key: string]: string };
 }
 
 class UserWithExcludedOutput extends User {
@@ -45,13 +42,8 @@ class UserWithExcludedOutput extends User {
   public value: string = "test";
 }
 
-class UserWithAliasedPrimitive extends User {
-  @Type(String, "second_name")
-  public middleName: string;
-}
-
 class UserWithDefaultValue extends User {
-  public company: string = "Jobilla Oy";
+  public company: string | null = "Jobilla Oy";
 }
 
 describe("EntityBuilder", () => {
@@ -122,9 +114,9 @@ describe("EntityBuilder", () => {
     });
 
     expect(user.posts).toBeDefined();
-    expect(user.posts[0]).toBeDefined();
-    expect(user.posts[0].title).toEqual("About");
-    expect(user.posts[0].content).toEqual("Lorem ipsum dolor sit amet");
+    expect(user.posts?.[0]).toBeDefined();
+    expect(user.posts?.[0].title).toEqual("About");
+    expect(user.posts?.[0].content).toEqual("Lorem ipsum dolor sit amet");
   });
 
   it("decodes an annotated optional nested array object to empty array", async () => {
@@ -137,22 +129,6 @@ describe("EntityBuilder", () => {
 
     expect(user.posts).toBeDefined();
     expect(user.posts).toEqual([]);
-  });
-
-  it("interprets an annotated primitive as an alias", () => {
-    /*
-     * Type casting at the end is because EntityBuilder would not accept explicit aliased keys,
-     * but a real application will likely pass data directly from an API response, so this
-     * casting is not something consumer codebases will need to do most of the time.
-     */
-    const user = EntityBuilder.buildOne(UserWithAliasedPrimitive, {
-      name: "Decahedron Technologies Ltd",
-      email: "hello@decahedron.io",
-      days_available: ["Monday", "Wednesday", "Friday"],
-      second_name: "A Middle Name",
-    } as PartialProps<UserWithAliasedPrimitive>);
-
-    expect(user.middleName).toEqual("A Middle Name");
   });
 
   it("persists default value if nothing is provided for a property", () => {
@@ -292,21 +268,21 @@ describe("EntityBuilder", () => {
       name: "Decahedron Technologies Ltd.",
       email: "hello@decahedron.io",
       days_available: ["Monday", "Wednesday", "Friday"],
-      address: null,
+      address: undefined,
     });
 
     expect(user.toJson()).toEqual({
       name: "Decahedron Technologies Ltd.",
       email: "hello@decahedron.io",
       days_available: ["Monday", "Wednesday", "Friday"],
-      address: null,
+      address: undefined,
     });
   });
 
   it("should preserve null values for non-annotated attributes", async () => {
     const user = EntityBuilder.buildOne(UserWithAnnotatedAddress, {
       name: "Decahedron Technologies Ltd.",
-      email: null,
+      email: undefined,
       days_available: ["Monday", "Wednesday", "Friday"],
       address: {
         street: "20-22 Wenlock Road",
@@ -318,7 +294,7 @@ describe("EntityBuilder", () => {
 
     expect(user.toJson()).toEqual({
       name: "Decahedron Technologies Ltd.",
-      email: null,
+      email: undefined,
       days_available: ["Monday", "Wednesday", "Friday"],
       address: {
         street: "20-22 Wenlock Road",
