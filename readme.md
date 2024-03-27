@@ -7,7 +7,21 @@ Each class is self-encoding, which means that it knows how to encode itself. As 
 ## Installation
 
 ```
-yarn add @jobilla/entity
+npm install @jobilla/entity
+```
+
+## Prerequisites
+
+This library assumes that you have the following options enabled in your `tsconfig.json`:
+
+```json
+{
+    "compilerOptions": {
+        "experimentalDecorators": true,
+        "emitDecoratorMetadata": true,
+        "useDefineForClassFields": true
+    }
+}
 ```
 
 ## Usage
@@ -17,14 +31,12 @@ The basic usage is very straightforward: make your class extend `Entity`, and us
 import { Entity, EntityBuilder } from '@jobilla/entity';
 
 class User extends Entity {
-    // We instantiate with null to ensure the property exists
-    // at the time of hydration.
-    public name: string = null;
-    public email: string = null;
+    public name!: string;
+    public email!: string;
 }
 
 fetch('https://api.service.com/v1/users/1')
-    .then(response => response.Body.json())
+    .then(response => response.body.json())
     .then(jsonData => EntityBuilder.buildOne<User>(User, jsonData));
 ```
 
@@ -32,7 +44,7 @@ You can also build an array of entities:
 
 ```typescript
 fetch('https://api.service.com/v1/users')
-    .then(response => response.Body.json())
+    .then(response => response.body.json())
     .then(jsonData => EntityBuilder.buildMany<User>(User, jsonData));
 ```
 
@@ -59,11 +71,11 @@ There are two ways to solve this. The first one is to simply override the `fromJ
 import { Entity, EntityBuilder } from '@jobilla/entity';
 
 class User extends Entity {
-    public name: string = null;
-    public email: string = null;
-    public address: Address = null;
+    public name!: string;
+    public email!: string;
+    public address!: Address;
     
-    public fromJson(jsonData: any): User {
+    public fromJson(jsonData: PartialProps<User>): User {
         super.fromJson(jsonData);
     	
         if (jsonData.hasOwnProperty('address')) {
@@ -79,33 +91,28 @@ However, this is quite verbose. Instead, an `@Type` decorator is provided for ne
 
 ```typescript
 class User extends Entity {
-    public name: string = null;
-    public email: string = null;
+    public name!: string;
+    public email!: string;
     @Type(Address)
-    public address: Address = null;
+    public address!: Address;
 }
-```
-
-If your JSON data comes in with another key, you may specify that manually with:
-```typescript
-@Type(Address, 'json_key')
 ```
 
 Note that by default, the `@Type` decorator will assume your JSON comes in snake case. As such,
 ```typescript
 @Type(Address)
-public homeAddress: Address = null;
+public homeAddress!: Address;
 ```
-will assume that the json holds the key `home_address`. If that is not the case, it should be manually specified as the second argument to `@Type`.
+will assume that the json holds the key `home_address`.
 
 #### Note about `Object`
 If your entity has a nested object that is **not** represented by another entity, you can also use `@Type(Object)` to annotate that the object should simply be stored as is.
 
 ### Encoding back to JSON
 
-Entity objects can also be encoded back to a plain JavaScript Object, or as a JSON string. You can call `toJson()` on any entity to convert it to a plain JS object.
+Entity objects can also be encoded back to a plain JavaScript Object. You can call `.toJson()` on any entity to convert it to a plain JS object.
 
-The method defaults to converting your properties to snake case. To prevent this, you can pass `false` as the first argument to `toJson()`. The method also accepts a second boolean argument that lets you specify if the output should instead be as a JSON string. `toJson(true, true)` is identical to `JSON.stringify(toJson(true))`.
+The method converts the keys of your properties to snake case.
 
 ## Contributing
 
