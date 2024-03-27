@@ -1,14 +1,7 @@
 import { TypeMetadata } from "./TypeMetadata";
 import { JsonExcludeMetadata } from "./JsonExcludeMetadata";
-
-export class DefaultValueCallbackMetadata {
-  constructor(
-    public target: Function,
-    public propertyName: string,
-    public callback: () => any,
-    public condition: (value: any) => boolean,
-  ) {}
-}
+import { Entity } from "../../Entity";
+import { Typeable } from "../Type";
 
 /**
  * Storage all library metadata.
@@ -19,7 +12,7 @@ export class MetadataStorage {
    *
    * @type {Array}
    */
-  private typeMetadatas: TypeMetadata[] = [];
+  private typeMetadatas: TypeMetadata<Entity, Entity | Object>[] = [];
   private excludedProperties: JsonExcludeMetadata[] = [];
 
   /**
@@ -27,7 +20,7 @@ export class MetadataStorage {
    *
    * @param metadata
    */
-  addTypeMetadata(metadata: TypeMetadata) {
+  addTypeMetadata(metadata: TypeMetadata<Entity, Entity | Object>) {
     this.typeMetadatas.push(metadata);
   }
 
@@ -42,25 +35,31 @@ export class MetadataStorage {
    * @param propertyName
    * @returns {TypeMetadata}
    */
-  findTypeMetadata(target: any, propertyName: string): TypeMetadata {
+  findTypeMetadata<TargetEntity extends Entity>(
+    target: any,
+    propertyName: string,
+  ): TypeMetadata<TargetEntity, Entity | Object> {
     const metadataFromTarget = this.typeMetadatas.find(
-      (meta) =>
-        meta.target === target && meta.sourcePropertyName === propertyName,
-    );
-
-    const metadataForAliasedProperty = this.typeMetadatas.find(
       (meta) => meta.target === target && meta.propertyName === propertyName,
     );
+
+    if (metadataFromTarget) {
+      return metadataFromTarget as TypeMetadata<
+        TargetEntity,
+        Typeable<Entity | Object>
+      >;
+    }
 
     const metadataFromChildren = this.typeMetadatas.find(
       (meta) =>
         target.prototype instanceof meta.target &&
-        meta.sourcePropertyName === propertyName,
+        meta.propertyName === propertyName,
     );
 
-    return (
-      metadataFromTarget || metadataForAliasedProperty || metadataFromChildren
-    );
+    return metadataFromChildren as TypeMetadata<
+      TargetEntity,
+      Typeable<Entity | Object>
+    >;
   }
 
   isPropertyExcluded(target: any, propertyName: string): boolean {

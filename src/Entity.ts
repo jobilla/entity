@@ -21,15 +21,17 @@ export type Props<T extends Entity> = {
     ? never
     : Snake<Extract<K, string>>]: T[K] extends Entity[]
     ? Props<T[K][number]>[]
-    : T[K] extends Entity
-      ? Props<T[K]>
-      : T[K] extends Entity | undefined
-        ? Props<Required<T[K]>> | undefined
-        : T[K] extends Entity | null
-          ? Props<Required<T[K]>> | undefined
-          : T[K] extends Entity | null | undefined
-            ? Props<Required<T[K]>> | null | undefined
-            : T[K];
+    : T[K] extends Entity[] | undefined
+      ? Props<Exclude<T[K], undefined>[number]>[] | undefined
+      : T[K] extends Entity
+        ? Props<T[K]>
+        : T[K] extends Entity | undefined
+          ? Props<Exclude<T[K], undefined>> | undefined
+          : T[K] extends Entity | null
+            ? Props<NonNullable<T[K]>> | undefined
+            : T[K] extends Entity | null | undefined
+              ? Props<Exclude<T[K], null | undefined>> | null | undefined
+              : T[K];
 };
 
 /**
@@ -38,26 +40,23 @@ export type Props<T extends Entity> = {
  * `PartialProps<T>` will generate different result
  * for entities that have Entity props.
  */
-export type PartialProps<T extends Entity> = Partial<{
+export type PartialProps<T extends Entity> = {
   [K in keyof T as T[K] extends Function
     ? never
-    : Snake<Extract<K, string>>]: T[K] extends Entity[]
+    : Snake<Extract<K, string>>]?: T[K] extends Entity[]
     ? PartialProps<T[K][number]>[]
-    : T[K] extends Entity
-      ? PartialProps<T[K]>
-      : T[K] extends Entity | undefined
-        ? PartialProps<Required<T[K]>> | undefined
-        : T[K] extends Entity | null
-          ? PartialProps<Required<T[K]>> | undefined
-          : T[K] extends Entity | null | undefined
-            ? PartialProps<Required<T[K]>> | null | undefined
-            : T[K];
-}>;
-
-function fromJson<T extends Entity>(data: PartialProps<T>): T {
-  EntityBuilder.fill(this, data);
-  return this;
-}
+    : T[K] extends Entity[] | undefined
+      ? PartialProps<Exclude<T[K], undefined>[number]>[] | undefined
+      : T[K] extends Entity
+        ? PartialProps<T[K]>
+        : T[K] extends Entity | undefined
+          ? PartialProps<Exclude<T[K], undefined>> | undefined
+          : T[K] extends Entity | null
+            ? PartialProps<Exclude<T[K], null>> | undefined
+            : T[K] extends Entity | null | undefined
+              ? PartialProps<Exclude<T[K], null | undefined>> | null | undefined
+              : T[K];
+};
 
 export class Entity {
   hasProp(key: string): boolean {
@@ -84,6 +83,12 @@ export class Entity {
     (this as any)[key] = value;
   }
 
-  toJson = toJson.bind(this);
-  fromJson = fromJson.bind(this);
+  toJson() {
+    return toJson(this);
+  }
+
+  fromJson(data: PartialProps<this>) {
+    EntityBuilder.fill(this, data);
+    return this;
+  }
 }

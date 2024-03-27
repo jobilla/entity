@@ -1,24 +1,25 @@
 import { defaultMetadataStorage } from "./storage";
 import { StringHelper } from "./StringHelper";
-import { TypeMetadata } from "./metadata/TypeMetadata";
 import { Entity, Props } from "../Entity";
 
-export function toJson<T extends Entity>(this: T): Props<T> {
+export function toJson<TargetEntity extends Entity>(
+  entity: TargetEntity,
+): Props<TargetEntity> {
   const data: any = {};
 
-  for (let key in this) {
-    if (!this.hasOwnProperty(key)) {
+  for (let key in entity) {
+    if (!entity.hasOwnProperty(key)) {
       continue;
     }
 
     // exclude any properties with `@JsonExclude()`
-    if (defaultMetadataStorage.isPropertyExcluded(this.constructor, key)) {
+    if (defaultMetadataStorage.isPropertyExcluded(entity.constructor, key)) {
       continue;
     }
 
     let outputKey = StringHelper.toSnake(key);
 
-    const value: any = this[key];
+    const value: any = entity[key];
 
     if (value instanceof Entity) {
       data[outputKey] = value.toJson() as Props<typeof value>;
@@ -26,8 +27,8 @@ export function toJson<T extends Entity>(this: T): Props<T> {
       continue;
     }
 
-    const metadata: TypeMetadata = defaultMetadataStorage.findTypeMetadata(
-      this.constructor,
+    const metadata = defaultMetadataStorage.findTypeMetadata(
+      entity.constructor,
       key,
     );
 

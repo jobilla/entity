@@ -1,5 +1,5 @@
 import { Entity, PartialProps } from "./Entity";
-import { Buildable, Constructor } from "./support/Type";
+import { Constructor } from "./support/Type";
 import { TypeMetadata } from "./support/metadata/TypeMetadata";
 import { defaultMetadataStorage } from "./support/storage";
 import { isEntityType } from "./support/isEntityType";
@@ -23,31 +23,34 @@ export class EntityBuilder {
     );
   }
 
-  public static fill<T extends Entity>(entity: T, data: PartialProps<T>): T {
+  public static fill<TargetEntity extends Entity>(
+    entity: TargetEntity,
+    data: PartialProps<TargetEntity>,
+  ): TargetEntity {
     for (let key in data) {
-      EntityBuilder.fillProperty<T>(entity, key, data[key]);
+      EntityBuilder.fillProperty<TargetEntity>(entity, key, data[key]);
     }
 
     return entity;
   }
 
-  private static fillProperty<T extends Entity>(
-    entity: T,
+  private static fillProperty<TargetEntity extends Entity>(
+    entity: TargetEntity,
     key: string,
-    value: any,
+    value: unknown,
   ): void {
     // Don't even bother for undefined values.
     if (typeof value === "undefined") {
       return;
     }
 
-    const metadata: TypeMetadata = defaultMetadataStorage.findTypeMetadata(
-      entity.constructor,
+    const metadata = defaultMetadataStorage.findTypeMetadata(
+      entity.constructor as Constructor<TargetEntity>,
       key,
     );
 
     if (metadata) {
-      EntityBuilder.fillTypeDecoratedProperty<T>(entity, metadata, value);
+      EntityBuilder.fillTypeDecoratedProperty(entity, metadata, value);
       return;
     }
 
@@ -55,17 +58,26 @@ export class EntityBuilder {
     entity.setProp(StringHelper.toCamel(key), value);
   }
 
-  private static fillTypeDecoratedProperty<T extends Entity>(
-    entity: T,
-    metadata: TypeMetadata,
-    value: InstanceType<Buildable>,
+  private static fillTypeDecoratedProperty<
+    TargetEntity extends Entity = Entity,
+    PropertyType extends Entity | Object = Entity | Object,
+  >(
+    entity: TargetEntity,
+    metadata: TypeMetadata<TargetEntity, PropertyType>,
+    value:
+      | null
+      | (PropertyType extends Entity
+          ? PartialProps<PropertyType>
+          : PropertyType),
   ) {
     // We shouldn't copy objects to our entity, as the entity should be responsible for constructing these itself.
     if (typeof value === "object" && value !== null && !Array.isArray(value)) {
       if (isEntityType(metadata.type)) {
         entity.setProp(
           metadata.propertyName,
-          EntityBuilder.buildOne(metadata.type, value),
+          // TypeScript cannot infer that `value` is a `PartialProps<Entity>`, but it has to be
+          // when `metadata.type` is an entity.
+          EntityBuilder.buildOne(metadata.type, value as PartialProps<Entity>),
         );
       } else {
         entity.setProp(metadata.propertyName, new metadata.type(value));

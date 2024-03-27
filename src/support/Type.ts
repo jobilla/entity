@@ -6,30 +6,25 @@ import { Entity } from "../Entity";
 export type Constructor<T> = { new (...args: any): T };
 
 // Types that can be passed as first argument to `EntityBuilder`.
-export type Buildable =
-  | Constructor<Entity>
-  | typeof Object
-  | typeof String
-  | typeof Number
-  | typeof Boolean;
-export type DefaultExportedBuildable = { default: Buildable };
-export type PackedBuildable = Buildable | DefaultExportedBuildable;
+export type Buildable<T extends Entity | Object> = Constructor<T>;
 
-export type BuildableResolver = () => PackedBuildable;
+export type DeferredBuildable<T extends Entity | Object> = () => Buildable<T>;
 
 // Types that can be passed to @Type decorator factory.
-export type Typeable = Buildable | BuildableResolver;
+export type Typeable<PropertyType extends Entity | Object> =
+  | Buildable<PropertyType>
+  | DeferredBuildable<PropertyType>;
 
-export function Type<T extends Typeable>(type: T, jsonKey?: string) {
-  return function (target: Entity, key: string) {
-    jsonKey = jsonKey ?? StringHelper.toSnake(key);
-
-    const metadata = new TypeMetadata(
-      target.constructor as Constructor<Entity>,
-      key,
-      jsonKey,
-      type,
+export function Type<TargetEntity extends Entity>(
+  type: Typeable<Entity | Object>,
+) {
+  return function (target: TargetEntity, key: string) {
+    defaultMetadataStorage.addTypeMetadata(
+      new TypeMetadata(
+        target.constructor as Constructor<TargetEntity>,
+        StringHelper.toSnake(key),
+        type,
+      ),
     );
-    defaultMetadataStorage.addTypeMetadata(metadata);
   };
 }
